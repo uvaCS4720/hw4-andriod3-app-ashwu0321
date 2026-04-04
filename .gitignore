@@ -13,3 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# JVM crash / profiler dumps (do not commit)
+replay_pid*.log
+hs_err_pid*.log
