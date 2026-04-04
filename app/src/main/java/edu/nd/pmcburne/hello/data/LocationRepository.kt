@@ -2,6 +2,8 @@ package edu.nd.pmcburne.hello.data
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 class LocationRepository(
     private val dao: LocationDao,
@@ -28,7 +30,7 @@ class LocationRepository(
         
         allLocations.forEach { entity ->
             val tagList = try {
-                kotlinx.serialization.json.Json.decodeFromString<List<String>>(entity.tags)
+                Json.decodeFromString<List<String>>(entity.tags)
             } catch (e: Exception) {
                 emptyList()
             }
@@ -45,7 +47,7 @@ class LocationRepository(
                 LocationEntity(
                     id = dto.id,
                     name = dto.name,
-                    tags = kotlinx.serialization.json.Json.encodeToString(dto.tag_list),
+                    tags = Json.encodeToString<List<String>>(dto.tag_list),
                     description = dto.description,
                     latitude = dto.visual_center.latitude,
                     longitude = dto.visual_center.longitude
@@ -60,7 +62,7 @@ class LocationRepository(
 
 private fun LocationEntity.toLocation(): Location {
     val tagList = try {
-        kotlinx.serialization.json.Json.decodeFromString<List<String>>(tags)
+        Json.decodeFromString<List<String>>(tags)
     } catch (e: Exception) {
         emptyList()
     }
