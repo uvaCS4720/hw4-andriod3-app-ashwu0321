@@ -7,6 +7,8 @@ import edu.nd.pmcburne.hello.data.Location
 import edu.nd.pmcburne.hello.data.LocationDatabase
 import edu.nd.pmcburne.hello.data.LocationRepository
 import edu.nd.pmcburne.hello.data.PlacemarksApi
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,6 +31,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(CampusMapUIState())
     val uiState: StateFlow<CampusMapUIState> = _uiState.asStateFlow()
 
+    private var tagFilterJob: Job? = null
+
     init {
         viewModelScope.launch {
             try {
@@ -45,6 +49,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 repository.getLocationsByTag("core").collect { locations ->
                     _uiState.update { it.copy(filteredLocations = locations, isLoading = false) }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message, isLoading = false) }
             }
@@ -53,11 +59,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun selectTag(tag: String) {
         _uiState.update { it.copy(selectedTag = tag) }
-        viewModelScope.launch {
+        tagFilterJob?.cancel()
+        tagFilterJob = viewModelScope.launch {
+            val requestedTag = tag
             try {
-                repository.getLocationsByTag(tag).collect { locations ->
-                    _uiState.update { it.copy(filteredLocations = locations) }
+                val locations = repository.getLocationsByTagSync(requestedTag)
+                _uiState.update { s ->
+                    if (s.selectedTag != requestedTag) s
+                    else s.copy(filteredLocations = locations)
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message) }
             }

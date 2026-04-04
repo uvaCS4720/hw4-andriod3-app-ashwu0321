@@ -6,7 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
-@Database(entities = [LocationEntity::class], version = 1)
+@Database(entities = [LocationEntity::class], version = 1, exportSchema = false)
 @TypeConverters(ListConverter::class)
 abstract class LocationDatabase : RoomDatabase() {
     abstract fun locationDao(): LocationDao

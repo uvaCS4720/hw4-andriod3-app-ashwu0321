@@ -1,7 +1,10 @@
 package edu.nd.pmcburne.hello.data
 
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -12,22 +15,27 @@ class LocationRepository(
     fun getAllLocations(): Flow<List<Location>> = flow {
         val entities = dao.getAllLocations()
         emit(entities.map { it.toLocation() })
-    }
+    }.flowOn(Dispatchers.IO)
 
     fun getLocationsByTag(tag: String): Flow<List<Location>> = flow {
         val allLocations = dao.getAllLocations()
-        emit(allLocations
-            .filter { entity ->
-                entity.tags.contains("\"$tag\"")
-            }
-            .map { it.toLocation() }
+        emit(
+            allLocations
+                .filter { entity ->
+                    val tagList = try {
+                        Json.decodeFromString<List<String>>(entity.tags)
+                    } catch (e: Exception) {
+                        emptyList()
+                    }
+                    tag in tagList
+                }
+                .map { it.toLocation() }
         )
-    }
+    }.flowOn(Dispatchers.IO)
 
     fun getAllUniqueTags(): Flow<List<String>> = flow {
         val allLocations = dao.getAllLocations()
         val tags = mutableSetOf<String>()
-        
         allLocations.forEach { entity ->
             val tagList = try {
                 Json.decodeFromString<List<String>>(entity.tags)
@@ -36,9 +44,23 @@ class LocationRepository(
             }
             tags.addAll(tagList)
         }
-        
         emit(tags.toList().sorted())
-    }
+    }.flowOn(Dispatchers.IO)
+
+    /** Loads and filters on a background thread (not the main dispatcher). */
+    suspend fun getLocationsByTagSync(tag: String): List<Location> =
+        withContext(Dispatchers.IO) {
+            dao.getAllLocations()
+                .filter { entity ->
+                    val tagList = try {
+                        Json.decodeFromString<List<String>>(entity.tags)
+                    } catch (e: Exception) {
+                        emptyList()
+                    }
+                    tag in tagList
+                }
+                .map { it.toLocation() }
+        }
 
     suspend fun syncLocations() {
         try {

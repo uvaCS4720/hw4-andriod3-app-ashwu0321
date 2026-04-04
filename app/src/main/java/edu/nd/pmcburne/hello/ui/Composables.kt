@@ -9,11 +9,14 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -41,7 +44,7 @@ fun TagDropdown(
     Box(modifier = modifier.fillMaxWidth()) {
         ExposedDropdownMenuBox(
             expanded = expanded,
-            onExpandedChange = { expanded = !expanded },
+            onExpandedChange = { expanded = it },
             modifier = Modifier.fillMaxWidth()
         ) {
             OutlinedTextField(
@@ -52,7 +55,7 @@ fun TagDropdown(
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
                 modifier = Modifier
-                    .menuAnchor()
+                    .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                     .fillMaxWidth()
             )
 
@@ -96,11 +99,15 @@ fun CampusMapView(
         cameraPositionState = cameraPositionState
     ) {
         locations.forEach { location ->
-            Marker(
-                state = rememberMarkerState(position = LatLng(location.latitude, location.longitude)),
-                title = location.name,
-                snippet = location.description
-            )
+            key(location.id) {
+                Marker(
+                    state = rememberMarkerState(
+                        position = LatLng(location.latitude, location.longitude)
+                    ),
+                    title = location.name,
+                    snippet = location.description
+                )
+            }
         }
     }
 }
@@ -120,6 +127,15 @@ fun CampusMapScreen(
             onTagSelected = { viewModel.selectTag(it) },
             modifier = Modifier.padding(16.dp)
         )
+
+        uiState.error?.let { msg ->
+            Text(
+                text = msg,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+        }
         
         // Map view
         Box(modifier = Modifier.weight(1f)) {
