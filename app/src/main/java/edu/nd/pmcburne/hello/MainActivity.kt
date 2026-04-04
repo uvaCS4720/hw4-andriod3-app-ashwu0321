@@ -29,74 +29,22 @@ import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModelProvider
+import edu.nd.pmcburne.hello.ui.CampusMapScreen
 import edu.nd.pmcburne.hello.ui.theme.MyApplicationTheme
 
 class MainActivity : ComponentActivity() {
-    private val viewModel by viewModels<MainViewModel>()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             MyApplicationTheme {
+                val viewModel = ViewModelProvider(this)[MainViewModel::class.java]
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    MainScreen(viewModel, modifier = Modifier.padding(innerPadding))
+                    CampusMapScreen(viewModel, modifier = Modifier.padding(innerPadding))
                 }
             }
         }
-    }
-}
-
-@Composable
-fun MainScreen(
-    viewModel: MainViewModel,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier) {
-        Text(
-            "Welcome to the Counter App!"
-        )
-        Spacer(modifier = modifier.height(16.dp))
-        Counter(viewModel)
-    }
-}
-
-@Composable
-@Preview(showBackground = true)
-fun PreviewMainScreen() {
-    MyApplicationTheme {
-        MainScreen(viewModel = MainViewModel())
-    }
-}
-
-@Composable
-fun Counter(
-    viewModel: MainViewModel,
-    modifier: Modifier = Modifier
-) {
-    val uiState by viewModel.uiState.collectAsState()
-    val counterValue = uiState.counterValue
-    Row {
-        Text("Value: $counterValue")
-        Button( // increment button
-            onClick = { viewModel.incrementCounter() },
-            modifier = modifier
-        ) { Text("+") }
-        Button( //decrement button
-            onClick = { viewModel.decrementCounter() },
-            enabled = viewModel.isDecrementEnabled,
-            modifier = modifier
-        ) {
-            Text("-")
-        }
-        Button( // reset button
-            onClick = { viewModel.incrementCounter() },
-            enabled = viewModel.isResetEnabled,
-            modifier = modifier
-        ) {
-            Text("Reset")
-        }
-
     }
 }
 
